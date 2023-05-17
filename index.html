@@ -1,0 +1,180 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        #overlayCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: black;
+        }
+
+        #overlayCanvas:hover {
+            cursor: none;
+        }
+
+        .cursor {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 1px solid white;
+            border-radius: 50%;
+            pointer-events: none;
+            transition: all 0.1s ease;
+            transition-property: background-color, border-color;
+            z-index: 9999;
+        }
+    </style>
+
+</head>
+
+<body>
+    <canvas id="overlayCanvas"></canvas>
+    <div id="cursor" class="cursor"></div>
+    <script>
+        const girls = ["animegurl.png", "animegurl2.png", "animegurl3.png", "animegurl4.png"];
+
+        const cursor = document.querySelector('#cursor');
+        const overlayCanvas = document.querySelector('#overlayCanvas');
+        const scene = new THREE.Scene();
+        const renderer = new THREE.WebGLRenderer({ canvas: overlayCanvas, alpha: true });
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        const objectGeometry = new THREE.BoxGeometry(12, 12, -3);
+        const objectMaterial = new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('./darkforest.png') });
+        const objectMesh = new THREE.Mesh(objectGeometry, objectMaterial);
+        scene.add(objectMesh);
+
+
+        function getRandomTexturePath() {
+            const randomIndex = Math.floor(Math.random() * girls.length);
+            return girls[randomIndex];
+        }
+
+        const objectGeometry2 = new THREE.PlaneGeometry(2, 2); // Cambiamos a PlaneGeometry para crear un cuadrado plano
+        const objectMaterial2 = new THREE.MeshBasicMaterial({
+            map: new THREE.TextureLoader().load(getRandomTexturePath()), // Carga una textura aleatoria del array
+            transparent: true, // Configura el material como transparente
+            opacity: 1 // Ajusta la opacidad según tus preferencias
+        });
+
+        function updateMaterialTexture() {
+            objectMaterial2.map = new THREE.TextureLoader().load(getRandomTexturePath()); // Carga una nueva textura aleatoria
+            objectMaterial2.needsUpdate = true;
+        }
+
+     
+
+        const objectMesh2 = new THREE.Mesh(objectGeometry2, objectMaterial2);
+        scene.add(objectMesh2);
+
+
+
+        const cameraSpeed = 0.1; // Velocidad de movimiento de la cámara
+        let cameraZ = 50;
+
+        function updateCameraPosition(mouseX, mouseY) {
+            const cameraX = (mouseX / window.innerWidth) * 2 - 1; // Convertir coordenadas del cursor a espacio de cámara (-1 a 1)
+            const cameraY = -(mouseY / window.innerHeight) * 2 + 1;
+
+            // Actualizar la posición de la cámara en función del movimiento del cursor
+            camera.position.x = cameraX * cameraSpeed;
+            camera.position.y = cameraY * cameraSpeed;
+            camera.position.z = cameraZ * cameraSpeed; // Ajusta la variable cameraZ a tu necesidad
+
+            // Apuntar la cámara hacia el objeto
+            camera.lookAt(objectMesh.position);
+        }
+
+
+        overlayCanvas.addEventListener('mousemove', e => {
+            const mouseX = e.clientX;
+            const mouseY = e.clientY;
+
+            updateCameraPosition(mouseX, mouseY);
+        });
+
+        overlayCanvas.addEventListener('mousemove', e => {
+            cursor.style.left = e.pageX + 'px';
+            cursor.style.top = e.pageY + 'px';
+        });
+
+        overlayCanvas.addEventListener('mouseenter', () => {
+            cursor.style.borderColor = 'white';
+            cursor.style.backgroundColor = 'transparent';
+        });
+
+        overlayCanvas.addEventListener('mouseleave', () => {
+            cursor.style.borderColor = 'transparent';
+            cursor.style.backgroundColor = 'transparent';
+        });
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        camera.position.z = 5;
+
+        const numDrops = 500;
+        const drops = [];
+
+        function createRain() {
+            const dropGeometry = new THREE.BoxGeometry(0.01, 0.1, 0.01);
+            const dropMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const minX = -20; // Valor mínimo para la posición X
+            const maxX = 20; // Valor máximo para la posición X
+
+            for (let i = 0; i < numDrops; i++) {
+                const drop = new THREE.Mesh(dropGeometry, dropMaterial);
+                drop.position.x = Math.random() * (maxX - minX) + minX;
+                drop.position.y = Math.random() * 4 + 1;
+                drop.position.z = Math.random() * 4 - 2;
+                drop.velocity = new THREE.Vector3(0, -0.1, 0);
+                drops.push(drop);
+                scene.add(drop);
+            }
+        }
+
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            drops.forEach(drop => {
+                drop.position.add(drop.velocity);
+
+                if (drop.position.y < -2) {
+                    drop.position.y = Math.random() * 4 + 1;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize);
+
+        createRain();
+        animate();
+
+        // Tu código de Three.js aquí
+    </script>
+</body>
+
+</html>
