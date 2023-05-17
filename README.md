@@ -1,1 +1,1 @@
-image ![./ss.PNG]
+![imagen](ss.PNG)
